@@ -8,4 +8,4 @@
 
 ![bottom](./cover-bottom.jpg)
 ![content](./cover-bottom-el-components.jpg)
-![closed](./cover-bottom-closed.jpg)
+![closed](./cover-closed.jpg)
