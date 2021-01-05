@@ -1,0 +1,177 @@
+{
+  "Output": "l-corner-base-xy-pane",
+  "Post": "linuxcnc",
+  "PostArgs": "",
+  "Tolerance": "0.01",
+  "ToolController": [
+    {
+      "dir": "Forward",
+      "hfeed": "0.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "2.4mm Drill",
+      "name": "_mm_Ball_End",
+      "nr": 2,
+      "speed": 2000.0,
+      "tool": {
+        "attribute": {},
+        "name": "Drill 2.4mm",
+        "parameter": {
+          "Diameter": "2,40 mm",
+          "Length": "52,00 mm",
+          "TipAngle": "119,00 \u00b0"
+        },
+        "shape": "drill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "0.5 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        }
+      ]
+    },
+    {
+      "dir": "Forward",
+      "hfeed": "1.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "2mm Endmill",
+      "name": "Slitting_Saw",
+      "nr": 3,
+      "speed": 3500.0,
+      "tool": {
+        "attribute": {},
+        "name": "Endmill003",
+        "parameter": {
+          "CuttingEdgeHeight": "9,00 mm",
+          "Diameter": "2,00 mm",
+          "Length": "38,00 mm",
+          "ShankDiameter": "3,17 mm"
+        },
+        "shape": "endmill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "1.0 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        }
+      ]
+    },
+    {
+      "dir": "Forward",
+      "hfeed": "0.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "2mm Gimlet",
+      "name": "TC__Default_Tool",
+      "nr": 1,
+      "speed": 2500.0,
+      "tool": {
+        "attribute": {},
+        "name": "Endmill004",
+        "parameter": {
+          "CuttingEdgeHeight": "9,00 mm",
+          "Diameter": "2,00 mm",
+          "Length": "38,00 mm",
+          "ShankDiameter": "3,17 mm"
+        },
+        "shape": "endmill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "0.5 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        },
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        }
+      ]
+    },
+    {
+      "dir": "Forward",
+      "hfeed": "0.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "3mm Drill",
+      "name": "__mm_Bull_Nose",
+      "nr": 5,
+      "speed": 2500.0,
+      "tool": {
+        "attribute": {},
+        "name": "3mm Drill001",
+        "parameter": {
+          "Diameter": "3,00 mm",
+          "Length": "61,00 mm",
+          "TipAngle": "119,00 \u00b0"
+        },
+        "shape": "drill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "0.0 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        },
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        }
+      ]
+    },
+    {
+      "dir": "Forward",
+      "hfeed": "1.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "6mm Endmill",
+      "name": "_mm_Ball_End001",
+      "nr": 4,
+      "speed": 3180.0,
+      "tool": {
+        "attribute": {},
+        "name": "Endmill005",
+        "parameter": {
+          "CuttingEdgeHeight": "15,00 mm",
+          "Diameter": "6,00 mm",
+          "Length": "49,00 mm",
+          "ShankDiameter": "6,00 mm"
+        },
+        "shape": "endmill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "1.0 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        }
+      ]
+    }
+  ],
+  "Version": 1
+}
