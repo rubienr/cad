@@ -1,20 +1,30 @@
 {
-  "Output": "l-corner-base-xy-pane",
+  "Output": "l-corner-base-yz-pane.ngc",
   "Post": "linuxcnc",
-  "PostArgs": "",
+  "PostArgs": "--preamble \"G17 G90 M600\" --no-tlo",
+  "Stock": {
+    "create": "FromBase",
+    "version": 1,
+    "xneg": "0.0 mm",
+    "xpos": "0.0 mm",
+    "yneg": "0.0 mm",
+    "ypos": "0.0 mm",
+    "zneg": "0.0 mm",
+    "zpos": "0.0 mm"
+  },
   "Tolerance": "0.01",
   "ToolController": [
     {
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2.4mm Drill",
-      "name": "_mm_Ball_End",
+      "label": "2.4mm Drill001",
+      "name": "_mm_Ball_End002",
       "nr": 2,
       "speed": 2000.0,
       "tool": {
         "attribute": {},
-        "name": "Drill 2.4mm",
+        "name": "Drill 2.4mm001",
         "parameter": {
           "Diameter": "2,40 mm",
           "Length": "52,00 mm",
@@ -39,15 +49,48 @@
     },
     {
       "dir": "Forward",
+      "hfeed": "0.0 mm/s",
+      "hrapid": "0.0 mm/s",
+      "label": "2.5mm Drill",
+      "name": "_mm_Ball_End001002",
+      "nr": 1,
+      "speed": 2500.0,
+      "tool": {
+        "attribute": {},
+        "name": "2.5mm Drill001",
+        "parameter": {
+          "Diameter": "2,50 mm",
+          "Length": "58,00 mm",
+          "TipAngle": "119,00 \u00b0"
+        },
+        "shape": "drill.fcstd",
+        "version": 2
+      },
+      "version": 1,
+      "vfeed": "0.5 mm/s",
+      "vrapid": "0.0 mm/s",
+      "xengine": [
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
+        }
+      ]
+    },
+    {
+      "dir": "Forward",
       "hfeed": "1.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2mm Endmill",
-      "name": "Slitting_Saw",
+      "label": "2mm Endmill001",
+      "name": "Slitting_Saw001",
       "nr": 3,
       "speed": 3500.0,
       "tool": {
         "attribute": {},
-        "name": "Endmill003",
+        "name": "Endmill009",
         "parameter": {
           "CuttingEdgeHeight": "9,00 mm",
           "Diameter": "2,00 mm",
@@ -75,13 +118,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2mm Gimlet",
-      "name": "TC__Default_Tool",
+      "label": "2mm Gimlet001",
+      "name": "TC__Default_Tool001",
       "nr": 1,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "Endmill004",
+        "name": "Endmill013",
         "parameter": {
           "CuttingEdgeHeight": "9,00 mm",
           "Diameter": "2,00 mm",
@@ -109,13 +152,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "3mm Drill",
-      "name": "__mm_Bull_Nose",
+      "label": "3mm Drill002",
+      "name": "__mm_Bull_Nose001",
       "nr": 5,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "3mm Drill001",
+        "name": "3mm Drill003",
         "parameter": {
           "Diameter": "3,00 mm",
           "Length": "61,00 mm",
@@ -142,13 +185,13 @@
       "dir": "Forward",
       "hfeed": "1.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "6mm Endmill",
-      "name": "_mm_Ball_End001",
+      "label": "6mm Endmill001",
+      "name": "_mm_Ball_End001001",
       "nr": 4,
       "speed": 3180.0,
       "tool": {
         "attribute": {},
-        "name": "Endmill005",
+        "name": "Endmill018",
         "parameter": {
           "CuttingEdgeHeight": "15,00 mm",
           "Diameter": "6,00 mm",
