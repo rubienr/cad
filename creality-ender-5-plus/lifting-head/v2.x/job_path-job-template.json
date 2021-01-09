@@ -1,7 +1,7 @@
 {
   "Output": "%j.ngc",
   "Post": "linuxcnc",
-  "PostArgs": "--preamble \"G17 G90 M600\" --no-tlo",
+  "PostArgs": "--preamble \"M600 G17 G90\" --no-tlo",
   "Stock": {
     "create": "FromBase",
     "version": 1,
@@ -10,7 +10,7 @@
     "yneg": "0.0 mm",
     "ypos": "0.0 mm",
     "zneg": "0.0 mm",
-    "zpos": "1.0 mm"
+    "zpos": "0.5 mm"
   },
   "Tolerance": "0.01",
   "ToolController": [
@@ -18,13 +18,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "1.0mm drill016",
-      "name": "_0_Deg__V_Bit001002001003",
+      "label": "1.0mm drill010",
+      "name": "_0_Deg__V_Bit001002001",
       "nr": 1,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "1.0mm drill017",
+        "name": "1.0mm drill011",
         "parameter": {
           "Diameter": "1,00 mm",
           "Length": "10,00 mm",
@@ -38,12 +38,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -51,13 +51,13 @@
       "dir": "Forward",
       "hfeed": "1.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2.0mm end mill014",
-      "name": "Slitting_Saw001001001002001003",
+      "label": "2.0mm end mill008",
+      "name": "Slitting_Saw001001001002001",
       "nr": 2,
       "speed": 3500.0,
       "tool": {
         "attribute": {},
-        "name": "2.0mm end mill015",
+        "name": "2.0mm end mill009",
         "parameter": {
           "CuttingEdgeHeight": "9,00 mm",
           "Diameter": "2,00 mm",
@@ -72,12 +72,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -85,13 +85,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2.0mm gimlet007",
-      "name": "TC__Default_Tool001001001002001003",
+      "label": "2.0mm gimlet004",
+      "name": "TC__Default_Tool001001001002001",
       "nr": 3,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "2.0mm drill (gimlet)007",
+        "name": "2.0mm drill (gimlet)004",
         "parameter": {
           "CuttingEdgeHeight": "9,00 mm",
           "Diameter": "2,00 mm",
@@ -106,12 +106,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.VertRapid",
-          "prop": "VertRapid"
-        },
-        {
           "expr": "${SetupSheet}.HorizRapid",
           "prop": "HorizRapid"
+        },
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
         }
       ]
     },
@@ -119,13 +119,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2.4mm drill016",
-      "name": "_mm_Ball_End002001001002001003",
+      "label": "2.4mm drill010",
+      "name": "_mm_Ball_End002001001002001",
       "nr": 4,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "2.4mm drill017",
+        "name": "2.4mm drill011",
         "parameter": {
           "Diameter": "2,40 mm",
           "Length": "52,00 mm",
@@ -139,12 +139,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -152,13 +152,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "2.5mm drill008",
-      "name": "_mm_Ball_End001002001001002001003",
+      "label": "2.5mm drill005",
+      "name": "_mm_Ball_End001002001001002001",
       "nr": 5,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "2.5mm Drill010",
+        "name": "2.5mm Drill007",
         "parameter": {
           "Diameter": "2,50 mm",
           "Length": "58,00 mm",
@@ -172,12 +172,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -185,13 +185,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "3.0mm drill018",
-      "name": "__mm_Bull_Nose001001001002001003",
+      "label": "3.0mm drill012",
+      "name": "__mm_Bull_Nose001001001002001",
       "nr": 6,
       "speed": 2500.0,
       "tool": {
         "attribute": {},
-        "name": "3.0mm drill019",
+        "name": "3.0mm drill013",
         "parameter": {
           "Diameter": "3,00 mm",
           "Length": "61,00 mm",
@@ -205,12 +205,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.VertRapid",
-          "prop": "VertRapid"
-        },
-        {
           "expr": "${SetupSheet}.HorizRapid",
           "prop": "HorizRapid"
+        },
+        {
+          "expr": "${SetupSheet}.VertRapid",
+          "prop": "VertRapid"
         }
       ]
     },
@@ -218,13 +218,13 @@
       "dir": "Forward",
       "hfeed": "0.5 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "3.0mm end mill011",
-      "name": "_mm_Endmill001002001003",
+      "label": "3.0mm end mill008",
+      "name": "_mm_Endmill001002001",
       "nr": 1,
       "speed": 3500.0,
       "tool": {
         "attribute": {},
-        "name": "3mm end mill007",
+        "name": "3mm end mill004",
         "parameter": {
           "CuttingEdgeHeight": "9,00 mm",
           "Diameter": "3,00 mm",
@@ -239,12 +239,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -252,13 +252,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "4.0mm drill014",
-      "name": "_mm_Drill002002001003",
+      "label": "4.0mm drill008",
+      "name": "_mm_Drill002002001",
       "nr": 7,
       "speed": 2000.0,
       "tool": {
         "attribute": {},
-        "name": "4.0mm drill015",
+        "name": "4.0mm drill009",
         "parameter": {
           "Diameter": "4,00 mm",
           "Length": "10,00 mm",
@@ -272,12 +272,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -285,13 +285,13 @@
       "dir": "Forward",
       "hfeed": "0.0 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "5.0mm drill016",
-      "name": "_mm_Drill001001002001003",
+      "label": "5.0mm drill010",
+      "name": "_mm_Drill001001002001",
       "nr": 8,
       "speed": 1800.0,
       "tool": {
         "attribute": {},
-        "name": "5.0mm drill017",
+        "name": "5.0mm drill011",
         "parameter": {
           "Diameter": "5,00 mm",
           "Length": "45,00 mm",
@@ -305,12 +305,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     },
@@ -318,13 +318,13 @@
       "dir": "Forward",
       "hfeed": "0.5 mm/s",
       "hrapid": "0.0 mm/s",
-      "label": "6.0mm end mill018",
-      "name": "_mm_Ball_End001001001001002001003",
+      "label": "6.0mm end mill012",
+      "name": "_mm_Ball_End001001001001002001",
       "nr": 9,
       "speed": 4400.0,
       "tool": {
         "attribute": {},
-        "name": "6.0mm end mill019",
+        "name": "6.0mm end mill013",
         "parameter": {
           "CuttingEdgeHeight": "15,00 mm",
           "Diameter": "6,00 mm",
@@ -339,12 +339,12 @@
       "vrapid": "0.0 mm/s",
       "xengine": [
         {
-          "expr": "${SetupSheet}.HorizRapid",
-          "prop": "HorizRapid"
-        },
-        {
           "expr": "${SetupSheet}.VertRapid",
           "prop": "VertRapid"
+        },
+        {
+          "expr": "${SetupSheet}.HorizRapid",
+          "prop": "HorizRapid"
         }
       ]
     }
