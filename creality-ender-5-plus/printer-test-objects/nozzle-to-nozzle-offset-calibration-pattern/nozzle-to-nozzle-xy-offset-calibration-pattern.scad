@@ -119,17 +119,17 @@ module draw()
 {
   teeth_count    = is_undef(teeth_count)    ?  21 : teeth_count;     // number of teeth, recommended: 10 for positive offset + 10 for negative offset + 1 center = 21
   tooth_width    = is_undef(tooth_width)    ?   2 : tooth_width;     // width of one single tooth
-  tooth_height   = is_undef(tooth_height)   ?   1 : tooth_height;    // height of teeth / comb, should be n * layer_height
+  tooth_height   = is_undef(tooth_height)   ? 0.3 : tooth_height;    // height of teeth / comb, should be n * layer_height
   tooth_length   = is_undef(tooth_length)   ?  10 : tooth_length;    // length of one single tooth
   teeth_gap      = is_undef(teeth_gap)      ?   2 : teeth_gap;       // space in between teeth of the unscaled comb
   comb_clearance = is_undef(comb_clearance) ?   2 : comb_clearance;  // comb to comb distance, should not be > (2 * tooth_width)
-  base_height    = is_undef(base_height)    ?   4 : base_height;     // comb base (optional), set to 0 to disable
+  base_height    = is_undef(base_height)    ?   0 : base_height;     // comb base (optional), set to 0 to disable
   render_mode    = is_undef(render_mode)    ?   0 : render_mode;     // 0 ... all, 1 ... verification comb + base, 2 ... alignment comb; (>= 3 ... reserved for internal usage)
   
   // TODO rr - remove the need of the extra_clearance parameter: swap draw order (draw verification comb first, then align the default one)
   extra_clearance = is_undef(extra_clearance) ? 0 : extra_clearance; // extra clearance in case the comb pairs overlap (usually on small twidth and/or tgap)
   
-  assert(teeth_count % 2 == 1, "Odd number of teeth is required.");
+  assert(teeth_count % 2 == 1, "An odd number of teeth is required.");
   drawXYCalibrationCombs(teeth_count, teeth_gap, tooth_width, tooth_height, tooth_length, comb_clearance, base_height, render_mode, extra_clearance);
 }
 
