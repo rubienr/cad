@@ -1,5 +1,22 @@
 /**
  *
+ * Run:
+ *
+ *    openscad <file_name>.scad
+ *    openscad [options] <file_name>.scad
+ *
+ * Options with -D <var=val>:
+ * 
+ *    teeth_count      number of teeth, recommended: 10 for positive offset + 10 for negative offset + 1 center = 21
+ *    tooth_width      width of one single tooth
+ *    tooth_height     height of teeth / comb, should be n * layer_height
+ *    tooth_length     length of one single tooth
+ *    teeth_gap        space in between teeth of the unscaled comb
+ *    comb_clearance   comb to comb distance, should not be > (2 * tooth_width)
+ *    base_height      comb base (optional), set to 0 to disable
+ *    render_mode      0 ... all, 1 ... verification comb + base, 2 ... alignment comb
+ *    extra_clearance  deprecated: extra clearance in case the comb pairs overlap (usually on small twidth and/or tgap)
+ * 
  */
 
 // ------------------------------------------------------------------------------------------------------------------------
@@ -133,8 +150,6 @@ module draw()
   drawXYCalibrationCombs(teeth_count, teeth_gap, tooth_width, tooth_height, tooth_length, comb_clearance, base_height, render_mode, extra_clearance);
 }
 
-
 // ------------------------------------------------------------------------------------------------------------------------
-
 
 draw();
