@@ -46,26 +46,29 @@ module drawComb (
   if (_render_mode == 5 || _render_mode == 6) 
   {
     color_value = _render_mode == 1 ? "blue": (_render_mode == 2 ? "red" : "orange");
-  
-    // teeth
-    for (t = [0:_num_teeth-1]) 
+
+    union() 
     {
-      let (translation = [t * (_teeth_gap + _tooth_width), 0, _base_height])
+      // teeth
+      for (t = [0:_num_teeth-1]) 
       {
-        translate (translation) color(color_value) cube ([_tooth_width, _tooth_length, _tooth_height], false);
-        
-        // center tooth mark
-        if (t == (((_num_teeth - 1) / 2)))
+        let (translation = [t * (_teeth_gap + _tooth_width), 0, _base_height])
         {
-          translate (translation + [0, -_tooth_width, _tooth_height]) color(color_value) cube ([_tooth_width, _tooth_length / 2 + _tooth_width, _tooth_height]);
+          translate (translation) color(color_value) cube ([_tooth_width, _tooth_length, _tooth_height], false);
+          
+          // center tooth mark
+          if (t == (((_num_teeth - 1) / 2)))
+          {
+            translate (translation + [0, -_tooth_width, _tooth_height]) color(color_value) cube ([_tooth_width, _tooth_length / 2 + _tooth_width, _tooth_height]);
+          }
         }
       }
+      
+      // comb back
+      translate ([0, - _tooth_width, _base_height]) 
+        color(color_value) 
+          cube ([_num_teeth * _tooth_width + (_num_teeth - 1) * _teeth_gap, _tooth_width, _tooth_height], false);      
     }
-    
-    // comb back
-    translate ([0, - _tooth_width, _base_height]) 
-      color(color_value) 
-        cube ([_num_teeth * _tooth_width + (_num_teeth - 1) * _teeth_gap, _tooth_width, _tooth_height], false);      
   }
 }
 
@@ -140,7 +143,7 @@ module draw()
   tooth_length   = is_undef(tooth_length)   ?  10 : tooth_length;    // length of one single tooth
   teeth_gap      = is_undef(teeth_gap)      ?   2 : teeth_gap;       // space in between teeth of the unscaled comb
   comb_clearance = is_undef(comb_clearance) ?   2 : comb_clearance;  // comb to comb distance, should not be > (2 * tooth_width)
-  base_height    = is_undef(base_height)    ?   0 : base_height;     // comb base (optional), set to 0 to disable
+  base_height    = is_undef(base_height)    ?   1 : base_height;     // comb base (optional), set to 0 to disable
   render_mode    = is_undef(render_mode)    ?   0 : render_mode;     // 0 ... all, 1 ... verification comb + base, 2 ... alignment comb; (>= 3 ... reserved for internal usage)
   
   // TODO rr - remove the need of the extra_clearance parameter: swap draw order (draw verification comb first, then align the default one)
