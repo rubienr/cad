@@ -5,6 +5,6 @@
 
 ![one box](01.jpeg)
 
-![right side](03.jpeg)
+![right side](02.jpeg)
 
-![left side](04.jpeg)
+![left side](03.jpeg)
