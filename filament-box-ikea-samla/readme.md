@@ -1,10 +1,10 @@
 # Yet another Filament Box - Samla
 
 
-![three boxes](00.jpeg)
+![three boxes](./img/00.jpeg)
 
-![one box](01.jpeg)
+![one box](./img/01.jpeg)
 
-![right side](02.jpeg)
+![right side](./img/02.jpeg)
 
-![left side](03.jpeg)
+![left side](./img/03.jpeg)
