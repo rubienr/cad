@@ -130,6 +130,9 @@ def definitions(mapping, matrix, context):
         require(isinstance(variables, dict), f"{context}: {varset!r} must map variables to values")
         for name, value in variables.items():
             require(isinstance(name, str) and name, f"{context}: invalid variable name")
+            require(matrix or not isinstance(value, (list, tuple)),
+                    f"{context}: {varset}.{name} expects a single fixed value, got {value!r}; "
+                    "use matrix.values for a list of candidate values, or remove the brackets for a fixed value")
             candidates = value if matrix else [value]
             require(isinstance(candidates, list) and candidates,
                     f"{context}: {varset}.{name} requires a nonempty candidate list")

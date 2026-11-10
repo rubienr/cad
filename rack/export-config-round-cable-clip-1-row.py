@@ -1,13 +1,13 @@
 # Relative paths are resolved from this configuration file's directory.
-source_filename = "flat-lan-cable-clip.FCStd"
+source_filename = "round-cable-clip-1-row.FCStd"
 file_extension = "step"
 file_prefix = ""
-output_directory = "exports/"
+output_directory = "exports/round-cable-clip-1-row/"
 
 # Used only with --screenshot. Paths are relative to this config file.
 # PNGs share the CAD filename stem; the normal FreeCAD profile is not used.
 screenshots = {
-    "output_directory": "exports/images/",
+    "output_directory": "exports/round-cable-clip-1-row/images/",
     "width": 1600,
     "height": 1200,
     "background": "#404040",  # #RRGGBB or "Transparent"
@@ -20,33 +20,30 @@ exports = {
     "matrix": {
         "values": {
             "parameters": {
-                "slot_separation": ["0 mm", "1 mm"],
-                "length": ["10 mm", "15 mm"],
-                "slots": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+                "hole_separation": ["0 mm", "1 mm"],
+                "holes": [2, 3, 4, 5, 6],
+                "length": ["10 mm"],
             },
         },
     },
     "objects": ["clip"],
     "groups": [
         {
-            # Cable section 2.4 x 7.6 mm; configured slot width is 2.5 mm.
             # Effective matrix variables are appended automatically.
-            "name": "{object}-2.4x7.6",
+            "name": "{object}-4.1mm",
             "screenshot": True,  # Overrides the default in screenshots above.
             "values": {
                 "parameters": {
-                    "slot_width": "2.5 mm",
-                    "slot_height": "7.6 mm",
+                    "hole_diameter": "4.1 mm",
                 },
             },
         },
         {
-            "name": "{object}-1.6x6.4",
-            "screenshot": False,
+            "name": "{object}-6.5mm",
+            "screenshot": True,  # Overrides the default in screenshots above.
             "values": {
                 "parameters": {
-                    "slot_width": "1.6 mm",
-                    "slot_height": "6.4 mm",
+                    "hole_diameter": "6.5 mm",
                 },
             },
         },
