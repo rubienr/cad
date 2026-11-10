@@ -3,9 +3,17 @@
 
 Usage (absolute paths make invocation independent of the working directory):
     python3 /path/to/export.py /project/export-config.py
+    python3 /path/to/export.py /project/export-config.py --export
     python3 /path/to/export.py /project/export-config.py --screenshot
+    python3 /path/to/export.py /project/export-config.py -e -s
+    python3 /path/to/export.py /project/export-config.py -e -s -p 4
+    Config only: list permutations and planned model filenames, without writes
+    or loading FreeCAD. No arguments: show help. Model format comes from the
+    configured file_extension (e.g. "stl" or "step").
 
 Python dependencies:
+    GNU Parallel (the parallel executable) is required for export/screenshot
+    modes. Worker limit: -p/--parallel, then exported PARALLEL, then 4.
     Python 3.10+ and the FreeCAD Python modules FreeCAD and Part, supplied by
     a FreeCAD installation (1.0+ for App::VarSet). No pip packages are needed.
     Use a Python interpreter ABI-compatible with that FreeCAD installation.
@@ -17,9 +25,12 @@ Python dependencies:
     profile and its own embedded GUI process, never an existing FreeCAD session.
     A separate window appears briefly. PNGs use an isometric view; image folder,
     dimensions and background are configured in screenshots (see below).
-    --screenshot creates only PNGs; without it, only CAD files are exported.
+    --export/-e writes CAD files; --screenshot/-s writes PNGs. Both flags run
+    both outputs from the same recomputed shape in one worker per variant.
+    All jobs are attempted even if some fail. Both outputs are staged before
+    publication; failed variants leave any outputs from earlier runs untouched.
 
-Configuration consists ONLY of literal assignments (comments are allowed):
+Configuration consists of assignments (comments are allowed):
     source_filename, file_extension, file_prefix, output_directory, exports.
     Optional screenshots dictionary: output_directory (default "images"),
     width (1600), height (1200), background ("#404040"), screenshot (True).
@@ -27,7 +38,10 @@ Configuration consists ONLY of literal assignments (comments are allowed):
     mode; groups may override it. CAD mode ignores screenshot enablement.
     Background accepts
     an RGB hex color (#RRGGBB) or "Transparent". Dimensions are pixel integers.
-    exports is a group dictionary with values, matrix, groups, name, objects and
+    exports accepts a group dictionary or a nonempty list of independent group
+    dictionaries. Each list item has its own matrix and groups; items do not
+    inherit from or cross with one another. Filename collisions are checked
+    across the whole list. Each group dictionary has values, matrix, groups, name, objects and
     optional screenshot (boolean, defaults to screenshots.screenshot). screenshot=False suppresses
     that group's PNGs only. Nested groups inherit it and may override it.
     values maps visible VarSet labels to variable/value dictionaries.
@@ -37,7 +51,10 @@ Configuration consists ONLY of literal assignments (comments are allowed):
     both values and matrix.values at the same level. Only leaf groups export,
     expanding the cross product across every VarSet. Leaves need name/objects.
     Relative source/output paths are relative to the configuration directory.
-    The config is parsed, not executed. No imports or computed expressions.
+    Values support Python literals, references to previously assigned settings,
+    and string concatenation with + (also inside dictionaries/lists).
+    The config is parsed, not executed. Imports, calls and attribute access
+    are not allowed.
 
 Units: strings such as "1 mm" are assigned using FreeCAD's unit handling;
 numeric values use FreeCAD's internal property units (e.g. mm for lengths).
@@ -65,15 +82,20 @@ Documents are never saved.
 
 import argparse
 import ast
-from contextlib import contextmanager, nullcontext
+import copy
+from contextlib import ExitStack, contextmanager, nullcontext
 import importlib
 import itertools
+import json
 import math
 import os
 from pathlib import Path
 import re
 import sys
 import string
+import subprocess
+import shutil
+import shlex
 import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
@@ -187,15 +209,52 @@ def expand_groups(group, inherited=None, name=None, objects=None, context="expor
                    "values": dict(zip(keys, combination))}
 
 
+def expand_exports(exports, screenshot=True):
+    if isinstance(exports, dict):
+        yield from expand_groups(exports, screenshot=screenshot)
+        return
+    require(isinstance(exports, list) and exports,
+            "exports must be a group dictionary or a nonempty list of group dictionaries")
+    for index, block in enumerate(exports, 1):
+        yield from expand_groups(block, context=f"exports[{index}]", screenshot=screenshot)
+
+
+def config_value(node, settings):
+    """Evaluate the small config expression language without executing Python."""
+    if isinstance(node, ast.Name):
+        require(node.id in settings,
+                f"Line {node.lineno}: unknown or forward reference {node.id!r}")
+        return copy.deepcopy(settings[node.id])
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        left = config_value(node.left, settings)
+        right = config_value(node.right, settings)
+        require(isinstance(left, str) and isinstance(right, str),
+                f"Line {node.lineno}: + supports string concatenation only")
+        return left + right
+    if isinstance(node, (ast.List, ast.Tuple)):
+        values = [config_value(item, settings) for item in node.elts]
+        return tuple(values) if isinstance(node, ast.Tuple) else values
+    if isinstance(node, ast.Dict):
+        require(all(key is not None for key in node.keys),
+                f"Line {node.lineno}: dictionary unpacking is not supported")
+        return {config_value(key, settings): config_value(value, settings)
+                for key, value in zip(node.keys, node.values)}
+    try:
+        return ast.literal_eval(node)
+    except (ValueError, TypeError) as error:
+        raise ValueError(f"Line {node.lineno}: unsupported config expression; use literals, "
+                         "earlier setting names, or string concatenation with +") from error
+
+
 def read_config(path, screenshot=False, overwrite=True):
     config = {}
     for node in ast.parse(path.read_text(encoding="utf-8"), filename=str(path)).body:
         require(isinstance(node, ast.Assign) and len(node.targets) == 1
                 and isinstance(node.targets[0], ast.Name),
-                "Config must contain only literal assignments")
+                "Config must contain only single-name assignments")
         key = node.targets[0].id
         require(key not in config, f"Duplicate config key: {key}")
-        config[key] = ast.literal_eval(node.value)
+        config[key] = config_value(node.value, config)
     keys = {"source_filename", "file_extension", "file_prefix", "output_directory", "exports"}
     require(keys <= set(config) and not set(config) - keys - {"screenshots"},
             f"Config requires {sorted(keys)}; optional key: screenshots")
@@ -229,7 +288,7 @@ def read_config(path, screenshot=False, overwrite=True):
                              else config["output_directory"])).resolve()
     require(source.is_file() and source.suffix.lower() == ".fcstd",
             f"Source must be an existing FCStd file: {source}")
-    variants = list(expand_groups(config["exports"], screenshot=images["screenshot"]))
+    variants = list(expand_exports(config["exports"], screenshot=images["screenshot"]))
     config["skipped_screenshots"] = sum(not v["screenshot"] for v in variants) if screenshot else 0
     if screenshot:
         variants = [v for v in variants if v["screenshot"]]
@@ -306,7 +365,11 @@ def screenshot_session():
                 os.environ[key] = str(Path(profile) / key.lower())
             os.environ["QT_QPA_PLATFORM"] = "xcb"
             os.environ["LIBGL_ALWAYS_SOFTWARE"] = "1"
-            load_freecad()
+            app = load_freecad()
+            # Batch rendering does not need Start's delayed welcome-page UI.
+            # Its timer can otherwise fire while a failed worker tears down.
+            app.ParamGet("User parameter:BaseApp/Preferences/General").SetString("AutoloadModule", "PartWorkbench")
+            app.ParamGet("User parameter:BaseApp/Preferences/Mod/Start").SetBool("ShowOnStartup", False)
             gui = importlib.import_module("FreeCADGui")
             gui.showMainWindow()
             gui.getMainWindow().setWindowTitle("FreeCAD screenshot worker")
@@ -369,6 +432,17 @@ def validate_shape(obj):
             f"{len(shape.Faces)} faces; status: {obj.getStatusString()}{detail}")
 
 
+def failed_count(count):
+    text = f"{count} failed"
+    enabled = "NO_COLOR" not in os.environ and (
+        sys.stdout.isatty() or sys.stderr.isatty()
+        or os.environ.get("FREECAD_EXPORT_COLOR") == "1")
+    if enabled:
+        color = 32 if count == 0 else 31
+        return f"\033[{color}m{text}\033[0m"
+    return text
+
+
 def failure_details(index, variant, output, stage, error, published):
     lines = [f"Variant {index} ({variant['context']})",
              f"  Stage: {stage}", f"  Error: {type(error).__name__}: {error}",
@@ -376,6 +450,9 @@ def failure_details(index, variant, output, stage, error, published):
     for label, name in zip(variant["objects"], variant["filenames"]):
         status = "published" if name in published else "not written this run"
         lines.append(f"    {label!r}: {output / name} [{status}]")
+    for label, name in zip(variant["objects"], variant.get("cad_filenames", [])):
+        status = "published" if name in published else "not written this run"
+        lines.append(f"    {label!r}: {Path(variant['cad_output']) / name} [{status}]")
     lines.append("  Effective configured values:")
     for (varset, name), value in sorted(variant["values"].items()):
         lines.append(f"    {varset}.{name} = {value!r}")
@@ -384,8 +461,8 @@ def failure_details(index, variant, output, stage, error, published):
     return "\n".join(lines)
 
 
-def run(config_path, screenshot=False, overwrite=True):
-    config, source, output, variants = read_config(config_path, screenshot, overwrite)
+def run(config_path, screenshot=False, overwrite=True, prepared=None):
+    config, source, output, variants = prepared or read_config(config_path, screenshot, overwrite)
     if config["skipped_screenshots"]:
         print(f"Skipped {config['skipped_screenshots']} variants with screenshot=False.", flush=True)
     if not variants:
@@ -394,7 +471,7 @@ def run(config_path, screenshot=False, overwrite=True):
     check_source_labels(source, variants)
     output.mkdir(parents=True, exist_ok=True)
     session = screenshot_session() if screenshot else nullcontext(None)
-    with session as gui, tempfile.TemporaryDirectory(prefix=".freecad-export-", dir=output) as staging:
+    with session as gui, tempfile.TemporaryDirectory(prefix=".freecad-export-", dir=output) as staging, ExitStack() as extra_staging:
         app = load_freecad()
         importlib.import_module("Part")
         failures = []
@@ -407,6 +484,11 @@ def run(config_path, screenshot=False, overwrite=True):
             try:
                 document = app.openDocument(str(source))
                 labels = variant["objects"]
+                cad_output = Path(variant["cad_output"]) if "cad_output" in variant else None
+                if cad_output is not None:
+                    cad_output.mkdir(parents=True, exist_ok=True)
+                    cad_staging = Path(extra_staging.enter_context(
+                        tempfile.TemporaryDirectory(prefix=".freecad-export-", dir=cad_output)))
                 stage = "resolving object labels"
                 objects = [resolve_label(document, label) for label in labels]
                 for (varset_label, name), value in variant["values"].items():
@@ -426,9 +508,17 @@ def run(config_path, screenshot=False, overwrite=True):
                 invalid = [f"{obj.Label}: {obj.getStatusString()}" for obj in document.Objects
                            if "Invalid" in obj.State or "Error" in obj.State]
                 require(not invalid, f"Recompute failed for: {invalid}")
-                for label, obj, name in zip(labels, objects, variant["filenames"]):
+                for object_index, (label, obj, name) in enumerate(zip(labels, objects, variant["filenames"])):
                     stage = f"validating shape of {label!r}"
                     validate_shape(obj)
+                    if cad_output is not None:
+                        cad_name = variant["cad_filenames"][object_index]
+                        stage = f"exporting CAD: {cad_name}"
+                        cad_path = cad_staging / cad_name
+                        getattr(obj.Shape, EXPORTERS[config["file_extension"]])(str(cad_path))
+                        require(cad_path.is_file() and cad_path.stat().st_size > 0,
+                                f"Exporter created no data: {cad_name}")
+                        staged.append((cad_path, cad_output / cad_name))
                     path = Path(staging) / name
                     stage = f"{'rendering screenshot' if screenshot else 'exporting CAD'}: {name}"
                     if screenshot:
@@ -436,17 +526,17 @@ def run(config_path, screenshot=False, overwrite=True):
                     else:
                         getattr(obj.Shape, EXPORTERS[config["file_extension"]])(str(path))
                     require(path.is_file() and path.stat().st_size > 0, f"Exporter created no data: {name}")
-                    staged.append(path)
+                    staged.append((path, output / path.name))
                     print(f"Variant {index}: prepared {name}", flush=True)
-                for path in staged:
+                for path, destination in staged:
                     stage = f"publishing {path.name}"
                     # Replace only after a complete export has been staged.
                     if overwrite:
-                        os.replace(path, output / path.name)
+                        os.replace(path, destination)
                     else:
-                        os.link(path, output / path.name)
+                        os.link(path, destination)
                     published.add(path.name)
-                    print(f"Exported {output / path.name}", flush=True)
+                    print(f"Exported {destination}", flush=True)
                 succeeded += 1
             except Exception as error:
                 failures.append(failure_details(index, variant, output, stage, error, published))
@@ -454,21 +544,149 @@ def run(config_path, screenshot=False, overwrite=True):
             finally:
                 if document is not None:
                     app.closeDocument(document.Name)
-        summary = f"{succeeded}/{len(variants)} variants succeeded; {len(failures)} failed."
+        summary = f"{succeeded}/{len(variants)} variants succeeded; {failed_count(len(failures))}."
         if failures:
             raise RuntimeError(summary + " Successful outputs were retained.\n\n" + "\n\n".join(failures))
         print(summary, flush=True)
 
 
-def main():
+def print_plan(config_path):
+    config, source, output, variants = read_config(config_path)
+    print(f"Dry run: {len(variants)} permutations, "
+          f"{sum(len(v['filenames']) for v in variants)} {config['file_extension'].upper()} files.")
+    print(f"Source: {source}")
+    for index, variant in enumerate(variants, 1):
+        print(f"Permutation {index} ({variant['context']}):")
+        for (varset, name), value in sorted(variant["values"].items()):
+            print(f"  {varset}.{name} = {value!r}")
+        for label, name in zip(variant["objects"], variant["filenames"]):
+            print(f"  {label!r} -> {output / name}")
+    print("Nothing written; geometry has not been recomputed or validated.")
+
+
+def run_worker(path):
+    task = json.loads(path.read_text())
+    variant = task["variant"]
+    variant["values"] = {(label, name): value for label, name, value in variant["values"]}
+    run(None, screenshot=task["screenshot"], overwrite=task["overwrite"], prepared=(
+        task["config"], Path(task["source"]), Path(task["output"]), [variant]))
+
+
+def plan_tasks(config_path, export_models, screenshots, overwrite=True):
+    tasks = []
+    for screenshot in ([False] if export_models else []) + ([True] if screenshots else []):
+        config, source, output, variants = read_config(config_path, screenshot, overwrite)
+        check_source_labels(source, variants)
+        if config["skipped_screenshots"]:
+            print(f"Skipped {config['skipped_screenshots']} variants with screenshot=False.", flush=True)
+        for variant in variants:
+            encoded = dict(variant)
+            encoded["values"] = [[label, name, value] for (label, name), value in variant["values"].items()]
+            tasks.append(dict(config=dict(config, skipped_screenshots=0), source=str(source),
+                              output=str(output), variant=encoded, screenshot=screenshot, overwrite=overwrite))
+    if export_models and screenshots:
+        def identity(task):
+            variant = task["variant"]
+            return json.dumps([variant["context"], variant["name"], variant["objects"], variant["values"]])
+        cad_tasks = {identity(task): task for task in tasks if not task["screenshot"]}
+        paired = []
+        for task in tasks:
+            if task["screenshot"]:
+                cad = cad_tasks.pop(identity(task))
+                task["variant"]["cad_output"] = cad["output"]
+                task["variant"]["cad_filenames"] = cad["variant"]["filenames"]
+                paired.append(task)
+        tasks = list(cad_tasks.values()) + paired
+    return tasks
+
+
+def run_parallel(config_path, export_models, screenshots, jobs=4, overwrite=True):
+    parallel = shutil.which("parallel")
+    require(parallel is not None, "GNU Parallel is required; install the parallel package")
+    tasks = plan_tasks(config_path, export_models, screenshots, overwrite)
+    if not tasks:
+        print("No jobs enabled; nothing to export.")
+        return 0
+    with tempfile.TemporaryDirectory(prefix="freecad-parallel-") as directory:
+        directory = Path(directory)
+        paths = []
+        for index, task in enumerate(tasks, 1):
+            path = directory / f"job-{index}.json"
+            path.write_text(json.dumps(task))
+            paths.append(str(path))
+        env = dict(os.environ, PARALLEL_HOME=str(directory / "parallel-home"))
+        # Parallel captures worker output, so propagate the parent's terminal
+        # color setting instead of relying on workers' redirected streams.
+        if "NO_COLOR" not in os.environ and (sys.stdout.isatty() or sys.stderr.isatty()):
+            env["FREECAD_EXPORT_COLOR"] = "1"
+        # Our PARALLEL is a worker count; GNU Parallel uses that name for options.
+        env.pop("PARALLEL", None)
+        command = shlex.join([sys.executable, str(Path(__file__).resolve()), "--worker", "{}"])
+        print(f"Running {len(tasks)} jobs with up to {jobs} workers.", flush=True)
+        result = subprocess.run([parallel, "--plain", "--jobs", str(jobs), "--group",
+                                 "--halt", "never", "--null", "--joblog", str(directory / "jobs.tsv"),
+                                 command], input="\0".join(paths) + "\0", text=True, env=env)
+        log = directory / "jobs.tsv"
+        if log.is_file():
+            rows = [line.split("\t") for line in log.read_text().splitlines()[1:]]
+            succeeded = sum(len(row) >= 8 and row[6] == "0" and row[7] == "0" for row in rows)
+            print(f"Batch: {succeeded}/{len(tasks)} jobs succeeded; "
+                  f"{failed_count(len(rows) - succeeded)}; {len(tasks) - len(rows)} not completed.", flush=True)
+            failed_indices = {int(row[0]) - 1 for row in rows
+                              if len(row) >= 8 and (row[6] != "0" or row[7] != "0")}
+            retained = []
+            for index in failed_indices:
+                task = tasks[index]
+                variant = task["variant"]
+                destinations = [Path(task["output"]) / name for name in variant["filenames"]]
+                destinations += [Path(variant["cad_output"]) / name
+                                 for name in variant.get("cad_filenames", [])]
+                retained.extend(path for path in destinations if path.exists())
+            if retained:
+                print(f"Note: {len(retained)} existing output files belong to failed jobs. "
+                      "They were not removed; directory totals may include earlier results.", flush=True)
+        if result.returncode:
+            print("Some jobs failed; successful outputs were retained. See job diagnostics above.", file=sys.stderr)
+        return int(result.returncode != 0)
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("config", type=Path, help="Python-literal configuration file")
-    parser.add_argument("--screenshot", action="store_true", help="Create only PNG previews instead of CAD exports")
+    parser.add_argument("config", type=Path, nargs="?", help="Configuration file; without mode flags, list permutations only")
+    parser.add_argument("-e", "--export", action="store_true", help="Export 3D model files in the configured format")
+    parser.add_argument("-s", "--screenshot", action="store_true", help="Create PNG previews")
+    parser.add_argument("-p", "--parallel", "--paralell", type=int, default=None,
+                        help="Maximum concurrent workers: CLI overrides exported PARALLEL; otherwise 4")
+    parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     parser.add_argument("--overwrite", action=argparse.BooleanOptionalAction, default=True,
                         help="Replace existing output files (default: enabled)")
-    args = parser.parse_args()
+    argv = sys.argv[1:] if argv is None else argv
+    if not argv:
+        parser.print_help()
+        return 0
+    args = parser.parse_args(argv)
+    if args.parallel is None:
+        try:
+            args.parallel = int(os.environ.get("PARALLEL", "4"))
+        except ValueError:
+            parser.error("PARALLEL must be a positive integer (or override it with --parallel)")
+    if args.parallel < 1:
+        parser.error("--parallel/PARALLEL must be a positive integer")
+    if args.worker is not None:
+        try:
+            run_worker(args.worker)
+            return 0
+        except Exception as error:
+            print(f"Error: {error}", file=sys.stderr)
+            return 1
+    if args.config is None:
+        parser.error("a configuration file is required")
     try:
-        run(args.config.resolve(), screenshot=args.screenshot, overwrite=args.overwrite)
+        config_path = args.config.resolve()
+        if args.export or args.screenshot:
+            return run_parallel(config_path, args.export, args.screenshot, args.parallel, args.overwrite)
+        else:
+            print_plan(config_path)
     except Exception as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1

@@ -14,38 +14,40 @@ screenshots = {
     "screenshot": False,  # Groups must explicitly enable screenshots.
 }
 
-exports = {
-    # Keys under values are visible VarSet labels. Additional VarSets can be
-    # added alongside parameters; their axes join the same cross product.
-    "matrix": {
-        "values": {
-            "parameters": {
-                "hole_separation": ["0 mm", "1 mm"],
-                "holes": [2, 3, 4, 5],
-                "length": ["10 mm"],
+exports = [
+    {
+        # Keys under values are visible VarSet labels. Additional VarSets can be
+        # added alongside parameters; their axes join the same cross product.
+        "matrix": {
+            "values": {
+                "parameters": {
+                    "hole_separation": ["0 mm", "1 mm"],
+                    "holes": [2, 3, 4, 5],
+                    "length": ["10 mm"],
+                },
             },
         },
+        "objects": ["clip"],
+        "groups": [
+            {
+                # Effective matrix variables are appended automatically.
+                "name": "{object}-4.1mm",
+                "screenshot": True,  # Overrides the default in screenshots above.
+                "values": {
+                    "parameters": {
+                        "hole_diameter": "4.1 mm",
+                    },
+                },
+            },
+            {
+                "name": "{object}-6.5mm",
+                "screenshot": True,  # Overrides the default in screenshots above.
+                "values": {
+                    "parameters": {
+                        "hole_diameter": "6.5 mm",
+                    },
+                },
+            },
+        ],
     },
-    "objects": ["clip"],
-    "groups": [
-        {
-            # Effective matrix variables are appended automatically.
-            "name": "{object}-4.1mm",
-            "screenshot": True,  # Overrides the default in screenshots above.
-            "values": {
-                "parameters": {
-                    "hole_diameter": "4.1 mm",
-                },
-            },
-        },
-        {
-            "name": "{object}-6.5mm",
-            "screenshot": True,  # Overrides the default in screenshots above.
-            "values": {
-                "parameters": {
-                    "hole_diameter": "6.5 mm",
-                },
-            },
-        },
-    ],
-}
+]
