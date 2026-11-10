@@ -7,7 +7,7 @@ output_directory = "exports/round-cable-clip-2-rows/"
 # Used only with --screenshot. Paths are relative to this config file.
 # PNGs share the CAD filename stem; the normal FreeCAD profile is not used.
 screenshots = {
-    "output_directory": "exports/round-cable-clip-2-rows/images/",
+    "output_directory": output_directory + "/images/",
     "width": 1600,
     "height": 1200,
     "background": "#404040",  # #RRGGBB or "Transparent"
