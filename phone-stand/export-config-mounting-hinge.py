@@ -22,7 +22,7 @@ exports = [
             "values": {
                 "parameters": {
                     "bracket_width": ["12 mm"],
-                    "hinge_bore_dia": ["0.8 mm"],
+                    "hinge_bore_dia": ["1.9 mm"],
                     "thickness": ["5 mm"],
                 },
             },
@@ -49,7 +49,7 @@ exports = [
                 },
             },
         },
-        "objects": ["mounting-hinge-whith-mounting-holes"],
+        "objects": ["mounting-hinge-with-mounting-holes"],
         "groups": [
             {
                 "name": "{object}",
