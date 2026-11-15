@@ -439,7 +439,7 @@ def save_screenshot(app, gui, obj, path, settings):
         render_timer = QtCore.QTimer()
         render_timer.setSingleShot(True)
         render_timer.timeout.connect(render_wait.quit)
-        render_timer.start(500)
+        render_timer.start(1000)
         render_wait.exec()
         view.saveImage(str(path), settings["width"], settings["height"], settings["background"])
     finally:
