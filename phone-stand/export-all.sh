@@ -6,8 +6,8 @@ script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd) || exit 1
 PARALLEL=$(nproc)
 
 configs=(
-    export-config-bracket.py
     export-config-mounting-hinge.py
+    export-config-bracket.py
     export-config-spacer.py
 )
 
