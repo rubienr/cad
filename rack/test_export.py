@@ -1,5 +1,10 @@
 """Matrix/config regression tests; run with python3 -B -m unittest -v."""
 import copy
+import ast
+import io
+import os
+from contextlib import redirect_stdout
+from unittest.mock import patch
 import tempfile
 import unittest
 from types import SimpleNamespace
@@ -9,6 +14,130 @@ import export
 
 
 class MatrixTests(unittest.TestCase):
+    def test_failed_count_colors(self):
+        with patch.dict(os.environ, {"FREECAD_EXPORT_COLOR": "1"}, clear=True):
+            self.assertEqual(export.failed_count(0), "\033[32m0 failed\033[0m")
+            self.assertEqual(export.failed_count(2), "\033[31m2 failed\033[0m")
+        with patch.dict(os.environ, {"FREECAD_EXPORT_COLOR": "1", "NO_COLOR": "1"}, clear=True):
+            self.assertEqual(export.failed_count(0), "0 failed")
+            self.assertEqual(export.failed_count(2), "2 failed")
+
+    def test_parallel_cli_environment_and_default_precedence(self):
+        cases = [({}, [], 4), ({"PARALLEL": "8"}, [], 8),
+                 ({"PARALLEL": "8"}, ["--parallel", "2"], 2),
+                 ({"PARALLEL": "invalid"}, ["--paralell", "3"], 3)]
+        for env, flags, expected in cases:
+            with self.subTest(env=env, flags=flags), patch.dict(os.environ, env, clear=True), \
+                    patch.object(export, "run_parallel", return_value=0) as run:
+                self.assertEqual(export.main(["config.py", "-e", *flags]), 0)
+                self.assertEqual(run.call_args.args[3], expected)
+
+    def test_combined_tasks_pair_outputs_and_keep_cad_only_variants(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            (base / "model.FCStd").touch()
+            config = dict(source_filename="model.FCStd", output_directory="cad",
+                          file_extension="step", file_prefix="", exports={
+                              "objects": ["clip"], "groups": [
+                                  {"name": "paired"},
+                                  {"name": "cad-only", "screenshot": False},
+                              ]})
+            path = base / "config.py"
+            path.write_text("\n".join(f"{k} = {v!r}" for k, v in config.items()))
+            with patch.object(export, "check_source_labels"):
+                tasks = export.plan_tasks(path, True, True)
+            self.assertEqual(len(tasks), 2)
+            cad = next(t for t in tasks if not t["screenshot"])
+            paired = next(t for t in tasks if t["screenshot"])
+            self.assertEqual(cad["variant"]["filenames"], ["cad-only.step"])
+            self.assertEqual(paired["variant"]["filenames"], ["paired.png"])
+            self.assertEqual(paired["variant"]["cad_filenames"], ["paired.step"])
+            self.assertEqual(paired["variant"]["cad_output"], str(base / "cad"))
+
+    def test_cli_help_and_explicit_modes(self):
+        with redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(export.main([]), 0)
+        self.assertIn("--export", output.getvalue())
+        for flag, screenshot in (("-e", False), ("--export", False),
+                                 ("-s", True), ("--screenshot", True)):
+            with self.subTest(flag=flag), patch.object(export, "run_parallel", return_value=0) as run:
+                self.assertEqual(export.main([flag, "config.py"]), 0)
+                run.assert_called_once_with(Path("config.py").resolve(), not screenshot, screenshot, 4, True)
+
+    def test_cli_both_share_worker_limit(self):
+        with patch.object(export, "run_parallel", return_value=1) as run:
+            self.assertEqual(export.main(["-es", "config.py", "-p", "2", "--no-overwrite"]), 1)
+            run.assert_called_once_with(Path("config.py").resolve(), True, True, 2, False)
+
+    def test_config_only_lists_stl_permutations_without_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            (base / "model.FCStd").touch()
+            config = dict(source_filename="model.FCStd", output_directory="out",
+                          file_extension="stl", file_prefix="", exports={
+                              "name": "clip", "objects": ["clip"],
+                              "matrix": {"values": {"p": {"x": [1, 2]}}}})
+            path = base / "config.py"
+            path.write_text("\n".join(f"{k} = {v!r}" for k, v in config.items()))
+            with patch.object(export, "load_freecad") as load, redirect_stdout(io.StringIO()) as output:
+                self.assertEqual(export.main([str(path)]), 0)
+                load.assert_not_called()
+            self.assertIn("2 permutations, 2 STL files", output.getvalue())
+            self.assertIn("clip-x-1.stl", output.getvalue())
+            self.assertFalse((base / "out").exists())
+
+    def test_setting_references_and_string_concatenation(self):
+        settings = {"output_directory": "exports/project/"}
+        expression = ast.parse('{"path": output_directory + "images/", "nested": [output_directory]}', mode="eval").body
+        self.assertEqual(export.config_value(expression, settings),
+                         {"path": "exports/project/images/", "nested": ["exports/project/"]})
+
+    def test_config_expressions_reject_executable_python(self):
+        for expression in ('missing', '__import__("os")', '"x".upper()',
+                           '1 + 2', '[x for x in []]', '{**{}}'):
+            with self.subTest(expression=expression), self.assertRaises(ValueError):
+                export.config_value(ast.parse(expression, mode="eval").body, {})
+
+    def test_independent_export_blocks(self):
+        blocks = [
+            {"matrix": {"values": {"p": {"x": [1, 2]}}},
+             "objects": ["first"], "screenshot": True,
+             "groups": [{"name": "a", "values": {"p": {"fixed": 9}}}]},
+            {"matrix": {"values": {"other": {"y": [3, 4, 5]}}},
+             "objects": ["second"], "groups": [{"name": "b"}]},
+        ]
+        before = copy.deepcopy(blocks)
+        variants = list(export.expand_exports(blocks, screenshot=False))
+        self.assertEqual(len(variants), 5)
+        self.assertEqual(variants[0]["context"], "exports[1].groups[1]")
+        self.assertEqual(variants[2]["context"], "exports[2].groups[1]")
+        self.assertEqual(variants[2]["values"], {("other", "y"): 3})
+        self.assertEqual(variants[2]["objects"], ["second"])
+        self.assertEqual([v["screenshot"] for v in variants], [True, True, False, False, False])
+        self.assertEqual(blocks, before)
+
+    def test_export_block_validation(self):
+        for value in ([], "invalid", [None]):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "exports"):
+                list(export.expand_exports(value))
+
+    def test_export_list_collisions_and_screenshot_filtering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            (base / "model.FCStd").touch()
+            config = dict(source_filename="model.FCStd", output_directory="out",
+                          file_extension="step", file_prefix="", exports=[
+                              {"name": "same", "objects": ["clip"]},
+                              {"name": "same", "objects": ["clip"], "screenshot": False},
+                          ])
+            path = base / "config.py"
+            path.write_text("\n".join(f"{k} = {v!r}" for k, v in config.items()))
+            with self.assertRaisesRegex(ValueError, "Filename collision"):
+                export.read_config(path)
+            parsed, _, _, variants = export.read_config(path, screenshot=True)
+            self.assertEqual(len(variants), 1)
+            self.assertEqual(parsed["skipped_screenshots"], 1)
+
     def test_global_screenshot_default_and_group_overrides(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
@@ -133,7 +262,7 @@ class MatrixTests(unittest.TestCase):
         names = [export.filename("", v["name"], "clip", v["values"], "step", v["matrix_keys"])
                  for v in export.expand_groups(group)]
         self.assertEqual(set(names), {
-            f"clip-1.4x6.1-length-{length}_mm_slot_separation-{spacing}_mm.step"
+            f"clip-1.4x6.1-length-{length}mm_slot_separation-{spacing}mm.step"
             for length in (10, 15) for spacing in (0, 1)})
 
     def test_duplicate_axis_names_are_qualified(self):
@@ -156,7 +285,9 @@ class MatrixTests(unittest.TestCase):
         self.assertEqual(len(variants), 1)
         self.assertEqual(variants[0]["values"], {})
         self.assertEqual(export.filename("foo_", "{object}-{p.x}", "clip", {("p", "x"): "1 mm"}, "step"),
-                         "foo_clip-1_mm.step")
+                         "foo_clip-1mm.step")
+        self.assertEqual(export.filename("", "{p.angle}", "clip", {("p", "angle"): "130 °"}, "step"),
+                         "130deg.step")
         with self.assertRaisesRegex(ValueError, "Unknown name template field"):
             export.filename("", "{p.missing}", "clip", {}, "step")
 
