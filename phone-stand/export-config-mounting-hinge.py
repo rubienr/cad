@@ -2,7 +2,7 @@
 source_filename = "hanging-bracket-for-monitor.FCStd"
 file_extension = "step"
 file_prefix = ""
-output_directory = "exports/hanging-bracket/"
+output_directory = "exports/mounting/"
 
 # Used only with --screenshot. Paths are relative to this config file.
 # PNGs share the CAD filename stem; the normal FreeCAD profile is not used.
@@ -49,7 +49,7 @@ exports = [
                 },
             },
         },
-        "objects": ["mounting-hinge-with-mounting-holes"],
+        "objects": ["mounting-hinge-whith-mounting-holes"],
         "groups": [
             {
                 "name": "{object}",
@@ -69,7 +69,7 @@ exports = [
                 },
             },
         },
-        "objects": ["mounting-hinge-for-curved-monitors"],
+        "objects": ["mounting-hinge-for-curved-monitor"],
         "groups": [
             {
                 "name": "{object}",

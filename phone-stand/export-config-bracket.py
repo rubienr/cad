@@ -59,10 +59,10 @@ exports = [
                 },
             },
         },
-        "objects": ["bracket-whith-spacer-pocket"],
+        "objects": ["bracket-with-spacer-pocket"],
         "groups": [
             {
-                "name": "{object}",
+                "name": "bracket-with-spacer-pocket",
                 "screenshot": True,
             },
         ],
