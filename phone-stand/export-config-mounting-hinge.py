@@ -41,7 +41,7 @@ exports = [
             "values": {
                 "parameters": {
                     "bracket_width": ["12 mm"],
-                    "hinge_bore_dia": ["0.8 mm"],
+                    "hinge_bore_dia": ["1.9 mm"],
                     "thickness": ["5 mm"],
                     "screw_bore_dia": ["2.5 mm"],
                     "screw_head_dia": ["5.4 mm"],
@@ -63,7 +63,7 @@ exports = [
             "values": {
                 "parameters": {
                     "bracket_width": ["12 mm"],
-                    "hinge_bore_dia": ["0.8 mm"],
+                    "hinge_bore_dia": ["1.9 mm"],
                     "thickness": ["5 mm"],
                     "curved_monitor_radius": ["1.0 m", "1.5 m", "1.7 m", "1.8 m", "1.9 m", "2.0 m", "2.5m", "3.4m", "3.8 m"],
                 },
